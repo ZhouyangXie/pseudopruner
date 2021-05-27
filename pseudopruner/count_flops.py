@@ -20,7 +20,10 @@ def _hook_count_conv2d_flops(m, x, y):
     b = 0 if m.bias is None else 1
 
     flops = c_out * w * h * (c_in * kw * kh + b)
-    setattr(m, 'flops', flops)
+    if hasattr(m, 'flops', flops):
+        m.flops = flops
+    else:
+        setattr(m, 'flops', flops)
 
 
 def _hook_count_linear_flops(m, x, y):
@@ -40,7 +43,10 @@ def _hook_count_linear_flops(m, x, y):
     b = 0 if m.bias is None else 1
 
     flops = c_out * (c_in + b)
-    setattr(m, 'flops', flops)
+    if hasattr(m, 'flops', flops):
+        m.flops = flops
+    else:
+        setattr(m, 'flops', flops)
 
 
 def count_flops(model, dummy_input):

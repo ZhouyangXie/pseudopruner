@@ -1,11 +1,7 @@
-import logging
-
 import torch
 import numpy as np
 
 from .channel_pruner import ChannelPruner
-
-_logger = logging.getLogger(__name__)
 
 
 class CorrChannelPruner(ChannelPruner):
@@ -59,8 +55,3 @@ class CorrChannelPruner(ChannelPruner):
             assert hasattr(module, 'mincorr')
             to_mask = minmax_replacible > module.mincorr
             module.prune_channel_mask[to_mask, ] = True
-
-            num_pruned = to_mask.sum()
-            _logger.debug(
-                f'module {name}: mask {num_pruned}/{len(to_mask)} channels'
-            )

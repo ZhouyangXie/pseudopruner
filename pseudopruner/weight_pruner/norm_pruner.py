@@ -39,6 +39,3 @@ class NormPruner(WeightPruner):
             min_score_inds = np.argsort(score)[0:num_pruned]
             min_score_inds = torch.from_numpy(min_score_inds)
             module.prune_weight_mask[min_score_inds, ] = True
-            _logger.debug(
-                f'module {name}: mask {num_pruned}/{len(score)} kernels'
-            )

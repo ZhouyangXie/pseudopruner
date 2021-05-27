@@ -19,11 +19,5 @@ class RandomChannelPruner(ChannelPruner):
             assert hasattr(module, 'sparsity')
             assert 0 <= float(module.sparsity) <= 1.0
 
-            mask = module.prune_channel_mask
-            rand = torch.rand(mask.shape)
-            mask[:] = rand < module.sparsity
-
-            num_masked = mask.sum()
-            _logger.debug(
-                f'module {name}: mask {int(num_masked)}/{len(mask)} channels'
-            )
+            rand = torch.rand(module.prune_channel_mask.shape)
+            module.prune_channel_mask[:] = rand < module.sparsity

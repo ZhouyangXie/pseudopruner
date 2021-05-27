@@ -1,11 +1,7 @@
-import logging
-
 import torch
 import numpy as np
 
 from .channel_pruner import ChannelPruner
-
-_logger = logging.getLogger(__name__)
 
 
 class ConstChannelPruner(ChannelPruner):
@@ -43,6 +39,3 @@ class ConstChannelPruner(ChannelPruner):
                 raise TypeError
 
             module.prune_channel_mask[to_mask, ] = True
-            _logger.debug(
-                f'module {name}: mask {to_mask.sum()}/{len(to_mask)} channels'
-            )
