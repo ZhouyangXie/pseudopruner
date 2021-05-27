@@ -86,4 +86,4 @@ def count_flops(model, dummy_input):
         if isinstance(module, _allowed_prune_layers):
             flops += module.flops
 
-    return flops
+    return int(flops)

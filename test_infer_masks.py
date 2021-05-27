@@ -20,7 +20,7 @@ class SimpleNet(torch.nn.Module):
         x2 = x0 + x1
         x3 = self.conv4(x2)
         x4 = self.conv5(x3)
-        return torch.square(x4).sum()
+        return torch.square(x4).sum(axis=(2, 3))
 
 
 def test():

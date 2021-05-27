@@ -62,12 +62,13 @@ def make_pruning_effective(model):
     effective by assigning 0 to specific parameters.
 
     """
-    for module in model.modules():
-        if hasattr(module, 'prune_weight_mask'):
-            assert isinstance(module, _allowed_prune_layers)
-            module.weight[module.prune_weight_mask, ] = 0
-            if hasattr(module, 'bias') and module.bias is not None:
-                module.bias[module.prune_weight_mask, ] = 0
+    with torch.no_grad():
+        for module in model.modules():
+            if hasattr(module, 'prune_weight_mask'):
+                assert isinstance(module, _allowed_prune_layers)
+                module.weight[module.prune_weight_mask, ] = 0
+                if hasattr(module, 'bias') and module.bias is not None:
+                    module.bias[module.prune_weight_mask, ] = 0
 
-        if hasattr(module, 'prune_channel_mask'):
-            module.weight[:, module.prune_channel_mask, ] = 0
+            if hasattr(module, 'prune_channel_mask'):
+                module.weight[:, module.prune_channel_mask, ] = 0
