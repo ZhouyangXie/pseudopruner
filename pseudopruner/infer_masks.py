@@ -61,8 +61,6 @@ def _hook_handle_nan_output_grad(module, grad_inputs, grad_outputs):
 
 def infer_masks(model, dummy_input):
     model = model.eval()
-    for param in model.parameters():
-        param.requires_grad = False
 
     # set all masked weights to NaN
     for module in model.modules():
@@ -81,7 +79,8 @@ def infer_masks(model, dummy_input):
             nan_handlers.append(h)
 
     # forward-propogate the network to make some input channels NaN
-    y = model(dummy_input)
+    with torch.no_grad():
+        y = model(dummy_input)
     for h in nan_handlers:
         h.remove()
 
@@ -90,10 +89,6 @@ def infer_masks(model, dummy_input):
     for module in model.modules():
         if hasattr(module, 'prune_weight_mask'):
             module.weight[module.prune_weight_mask, ] = 1
-
-    model.train()
-    for param in model.parameters():
-        param.requires_grad = True
 
     # get the channel-merging layers(Conv2d and Linear here)
     # ready to handle NaN in the gradients:
@@ -107,15 +102,14 @@ def infer_masks(model, dummy_input):
                 _hook_handle_nan_output_grad)
             nan_handlers.append(h)
 
-    dummy_input.requires_grad = True
-    y = model(dummy_input)
+    with torch.no_grad():
+        # to enable the backward on the first layer
+        dummy_input.requires_grad = True
+        y = model(dummy_input)
+
     loss = y.sum()
     assert not torch.isnan(loss).any(), \
         'should not prune the weight of the last conv/linear layer'
     loss.backward()
     for h in nan_handlers:
         h.remove()
-
-    model.eval()
-    for param in model.parameters():
-        param.requires_grad = False

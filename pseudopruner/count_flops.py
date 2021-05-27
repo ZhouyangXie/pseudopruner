@@ -20,7 +20,7 @@ def _hook_count_conv2d_flops(m, x, y):
     b = 0 if m.bias is None else 1
 
     flops = c_out * w * h * (c_in * kw * kh + b)
-    if hasattr(m, 'flops', flops):
+    if hasattr(m, 'flops'):
         m.flops = flops
     else:
         setattr(m, 'flops', flops)
@@ -43,7 +43,7 @@ def _hook_count_linear_flops(m, x, y):
     b = 0 if m.bias is None else 1
 
     flops = c_out * (c_in + b)
-    if hasattr(m, 'flops', flops):
+    if hasattr(m, 'flops'):
         m.flops = flops
     else:
         setattr(m, 'flops', flops)
@@ -64,8 +64,6 @@ def count_flops(model, dummy_input):
         flops (int): total number of FLOPS
     """
     model = model.eval()
-    for param in model.parameters():
-        param.requires_grad = False
 
     handles = []
     for module in model.modules():
@@ -77,7 +75,8 @@ def count_flops(model, dummy_input):
             continue
         handles.append(h)
 
-    _ = model(dummy_input)
+    with torch.no_grad():
+        _ = model(dummy_input)
 
     for h in handles:
         h.remove()
