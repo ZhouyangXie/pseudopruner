@@ -40,21 +40,43 @@ def _hook_handle_nan_output_grad(module, grad_inputs, grad_outputs):
     grad_output = grad_outputs[0]
 
     if grad_output.dim() == 2:
-        v = grad_output.abs().sum(axis=0)
-        additional_weight_mask = ~(torch.isnan(v) | (v == 0))
+        additional_weight_mask = ~torch.isnan(grad_output.sum(axis=(0)))
     elif grad_output.dim() == 4:
-        v = grad_output.abs().sum(axis=(0, 2, 3))
-        additional_weight_mask = ~(torch.isnan(v) | (v == 0))
+        additional_weight_mask = ~torch.isnan(grad_output.sum(axis=(0, 2, 3)))
     else:
         raise RuntimeError('wrong output grad dim')
+
+    for v in grad_output[0]:
+        assert torch.isnan(v).all() or (~torch.isnan(v)).all()
 
     assert hasattr(module, 'prune_weight_mask')
     module.prune_weight_mask[additional_weight_mask, ] = True
 
-    grad_input_handled = grad_input.clone()
+    grad_input_handled = torch.ones(grad_input.shape).to(grad_input.device)
     assert hasattr(module, 'prune_channel_mask')
     grad_input_handled[:, ~module.prune_channel_mask] = float('nan')
     grad_input_handled[:, module.prune_channel_mask] = 1
+
+    return (grad_input_handled, )
+
+
+def _hook_pass_nan_grad(module, grad_inputs, grad_outputs):
+    assert len(grad_inputs) == 1
+    grad_input = grad_inputs[0]
+    assert len(grad_outputs) == 1
+    grad_output = grad_outputs[0]
+    assert grad_input.shape[1] == grad_output.shape[1]
+
+    if len(grad_output.shape) == 2:
+        is_nan = torch.isnan(grad_output.sum(axis=(0,)))
+    elif len(grad_output.shape) == 4:
+        is_nan = torch.isnan(grad_output.sum(axis=(0, 2 ,3)))
+    else:
+        raise RuntimeError
+
+    grad_input_handled = torch.ones(grad_input.shape).to(grad_input.device)
+    grad_input_handled[:, is_nan] = float('nan')
+    grad_input_handled[:, ~is_nan] = 1.0
 
     return (grad_input_handled, )
 
@@ -99,7 +121,15 @@ def infer_masks(model, dummy_input):
         if isinstance(module, _allowed_prune_layers):
             h = module.register_full_backward_hook(
                 _hook_handle_nan_output_grad)
-            nan_handlers.append(h)
+        elif isinstance(module, torch.nn.ReLU):
+            h = module.register_full_backward_hook(
+                _hook_pass_nan_grad
+            )
+
+        if hasattr(module, 'inplace'):
+            module.inplace = False
+
+        nan_handlers.append(h)
 
     with torch.enable_grad():
         # to enable the backward on the first layer
