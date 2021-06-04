@@ -1,10 +1,6 @@
-import logging
-
 import torch
 
 from .channel_pruner import ChannelPruner
-
-_logger = logging.getLogger(__name__)
 
 
 class RandomChannelPruner(ChannelPruner):

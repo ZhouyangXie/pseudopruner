@@ -1,7 +1,5 @@
-import logging
 import torch
 
-_logger = logging.getLogger(__name__)
 
 _allowed_prune_layers = (
     torch.nn.Conv2d,

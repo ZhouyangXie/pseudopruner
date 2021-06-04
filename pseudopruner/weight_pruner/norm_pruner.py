@@ -1,11 +1,7 @@
-import logging
-
 import torch
 import numpy as np
 
 from .weight_pruner import WeightPruner
-
-_logger = logging.getLogger(__name__)
 
 
 class NormPruner(WeightPruner):
