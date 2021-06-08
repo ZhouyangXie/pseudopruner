@@ -13,17 +13,20 @@ def _hook_handle_nan_input(module, inputs):
     x = inputs[0]
 
     if x.dim() == 2:
-        additional_channel_mask = torch.isnan(x[0, :])
+        channel_input = x[0, :]
     elif x.dim() == 4:
-        additional_channel_mask = torch.isnan(x[0, :, 0, 0])
+        channel_input = x[0, :, 0, 0]
     else:
         raise RuntimeError('wrong input dim')
+
+    additional_channel_mask = \
+        torch.isnan(channel_input) | torch.isinf(channel_input)
 
     assert hasattr(module, 'prune_channel_mask')
     module.prune_channel_mask[additional_channel_mask, ] = True
 
     x_handled = x.clone()
-    x_handled[torch.isnan(x)] = 1
+    x_handled[torch.isnan(x) | torch.isinf(x)] = 1
     return (x_handled, )
 
 
@@ -40,14 +43,19 @@ def _hook_handle_nan_output_grad(module, grad_inputs, grad_outputs):
     grad_output = grad_outputs[0]
 
     if grad_output.dim() == 2:
-        additional_weight_mask = ~torch.isnan(grad_output.sum(axis=(0)))
+        channel_input = grad_output.sum(axis=(0))
     elif grad_output.dim() == 4:
-        additional_weight_mask = ~torch.isnan(grad_output.sum(axis=(0, 2, 3)))
+        channel_input = grad_output.sum(axis=(0, 2, 3))
     else:
         raise RuntimeError('wrong output grad dim')
 
+    additional_weight_mask = \
+        ~(torch.isnan(channel_input) | torch.isinf(channel_input))
+
     for v in grad_output[0]:
-        assert torch.isnan(v).all() or (~torch.isnan(v)).all()
+        assert torch.isnan(v).all() \
+            or torch.isinf(v).all() \
+            or (~torch.isnan(v) & ~torch.isinf(v)).all()
 
     assert hasattr(module, 'prune_weight_mask')
     module.prune_weight_mask[additional_weight_mask, ] = True
@@ -68,11 +76,13 @@ def _hook_pass_nan_grad(module, grad_inputs, grad_outputs):
     assert grad_input.shape[1] == grad_output.shape[1]
 
     if len(grad_output.shape) == 2:
-        is_nan = torch.isnan(grad_output.sum(axis=(0,)))
+        channel_input = grad_output.sum(axis=(0,))
     elif len(grad_output.shape) == 4:
-        is_nan = torch.isnan(grad_output.sum(axis=(0, 2 ,3)))
+        channel_input = grad_output.sum(axis=(0, 2 ,3))
     else:
         raise RuntimeError
+
+    is_nan = torch.isnan(channel_input) | torch.isinf(channel_input)
 
     grad_input_handled = torch.ones(grad_input.shape).to(grad_input.device)
     grad_input_handled[:, is_nan] = float('nan')
