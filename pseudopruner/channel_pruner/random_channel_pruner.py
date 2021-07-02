@@ -16,4 +16,5 @@ class RandomChannelPruner(ChannelPruner):
             assert 0 <= float(module.sparsity) <= 1.0
 
             rand = torch.rand(module.prune_channel_mask.shape)
-            module.prune_channel_mask[:] = rand < module.sparsity
+            to_mask = rand < module.sparsity
+            module.prune_channel_mask[to_mask] = True
