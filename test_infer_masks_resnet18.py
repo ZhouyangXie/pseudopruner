@@ -2,7 +2,6 @@ import torch
 from torchvision.models import resnet18
 
 from pseudopruner.channel_pruner import RandomChannelPruner
-from pseudopruner.count_flops import count_flops
 from pseudopruner.infer_masks import infer_masks
 from pseudopruner.utils import \
     get_ready_to_prune, mark_to_prune
@@ -24,7 +23,6 @@ def make_pruning_effective(model, mask_weight):
 
             if hasattr(module, 'prune_channel_mask'):
                 module.weight[:, module.prune_channel_mask, ] = 0
-
 
 
 def test():

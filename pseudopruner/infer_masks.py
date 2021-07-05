@@ -2,6 +2,25 @@ import torch
 from .utils import _allowed_prune_layers
 
 
+def _hook_handle_nan_output(module, _, output):
+    '''
+        this hook set the set some output channels to NaN
+        according to weight mask of the channel
+    '''
+    if hasattr(module, 'prune_weight_mask'):
+        assert isinstance(output, torch.Tensor)
+        if isinstance(module, torch.nn.Conv2d):
+            _, out_channels, _, _ = output.shape
+        elif isinstance(module, torch.nn.Linear):
+            _, out_channels = output.shape
+        else:
+            raise RuntimeError
+
+        output_handled = output.clone()
+        output_handled[:, module.prune_weight_mask, ] = float('NaN')
+        return output_handled
+
+
 def _hook_handle_nan_input(module, inputs):
     '''
         this hook identify all NaN channels in the input,
@@ -78,7 +97,7 @@ def _hook_pass_nan_grad(module, grad_inputs, grad_outputs):
     if len(grad_output.shape) == 2:
         channel_input = grad_output.sum(axis=(0,))
     elif len(grad_output.shape) == 4:
-        channel_input = grad_output.sum(axis=(0, 2 ,3))
+        channel_input = grad_output.sum(axis=(0, 2, 3))
     else:
         raise RuntimeError
 
@@ -101,16 +120,11 @@ def infer_masks(model, dummy_input):
         if isinstance(module, _allowed_prune_layers):
             h = module.register_forward_pre_hook(_hook_handle_nan_input)
             nan_handlers.append(h)
+            h = module.register_forward_hook(_hook_handle_nan_output)
+            nan_handlers.append(h)
 
     # forward-propogate the network to make some input channels NaN
     with torch.no_grad():
-        # set all masked weights to NaN
-        for module in model.modules():
-            if hasattr(module, 'prune_weight_mask'):
-                assert isinstance(
-                    module, (torch.nn.Conv2d, torch.nn.Linear))
-                module.weight[module.prune_weight_mask, ] = float('nan')
-
         y = model(dummy_input)
         assert not torch.isnan(y).any(), \
             'should not prune the weight of the last conv/linear layer'
