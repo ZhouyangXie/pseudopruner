@@ -5,7 +5,3 @@
 3. Implement more one-shot pruners
 
 4. Implement real pruning(a light model ready for inference)
-
-5. Reconstruct this lib in an OOP manner(define a class to wrap torch.nn.Module)
-and more importantly, reduce the change on model itself
- 

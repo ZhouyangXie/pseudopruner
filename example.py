@@ -35,8 +35,9 @@ def main():
     # infer other channel/weight masks
     infer_masks(model, dummy_input)
 
-    # make masked weights/channels to be ineffective(zero)
-    make_pruning_effective(model)
+    with make_pruning_effective(model) as pruned_model:
+        _ = pruned_model(dummy_input)
+        # do anything
 
     # skip the finetuning or compensation step
     partial_flops = count_flops(model, dummy_input)

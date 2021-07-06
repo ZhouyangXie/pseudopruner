@@ -31,7 +31,7 @@ def test():
     infer_masks(model, dummy_input)
 
     # make masked weights zero
-    make_pruning_effective(model)
+    # make_pruning_effective(model)
 
     flops_after = count_flops(model, dummy_input)
     with torch.no_grad():

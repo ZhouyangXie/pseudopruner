@@ -7,7 +7,7 @@ from pseudopruner.utils import \
     get_ready_to_prune, mark_to_prune
 
 
-def make_pruning_effective(model, mask_weight):
+def zero_weight(model, mask_weight):
     """
     Make the 'prune_channel_mask' and 'prune_weight_mask'
     effective by assigning 0 to specific parameters.
@@ -47,12 +47,12 @@ def test():
     infer_masks(model, dummy_input)
 
     # make masked weights zero
-    make_pruning_effective(model, False)
+    zero_weight(model, False)
 
     with torch.no_grad():
         y0 = model(dummy_input).detach().clone()
 
-    make_pruning_effective(model, True)
+    zero_weight(model, True)
 
     with torch.no_grad():
         y1 = model(dummy_input).detach().clone()
