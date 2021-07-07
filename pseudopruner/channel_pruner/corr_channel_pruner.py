@@ -52,6 +52,13 @@ class CorrChannelPruner(ChannelPruner):
             else:
                 raise TypeError
 
-            assert hasattr(module, 'mincorr')
-            to_mask = minmax_replacible > module.mincorr
+            if hasattr(module, 'mincorr'):
+                to_mask = minmax_replacible > module.mincorr
+            else:
+                assert hasattr(module, 'sparsity')
+                sparsity = module.sparsity
+                assert 0 <= sparsity < 1
+                num_to_mask = int(sparsity * in_channels)
+                to_mask = np.argsort(minmax_replacible)[-num_to_mask:]
+
             module.prune_channel_mask[to_mask, ] = True
