@@ -1,0 +1,7 @@
+1. Support more layers with parameters such as DeConv
+
+2. A more stable way to implement infer_masks
+
+3. Implement more one-shot pruners
+
+4. Implement real pruning(a light model ready for inference)

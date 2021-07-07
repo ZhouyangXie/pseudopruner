@@ -1,4 +1,5 @@
 import torch
+from contextlib import contextmanager
 
 
 _allowed_prune_layers = (
@@ -54,19 +55,33 @@ def mark_to_prune(module, kwargs):
         setattr(module, k, v)
 
 
+def _hook_set_input_zero(module, inputs):
+    assert isinstance(module, _allowed_prune_layers)
+    assert hasattr(module, 'prune_channel_mask')
+    assert len(inputs) == 1
+    x_handled = inputs[0].clone()
+    x_handled[:, module.prune_channel_mask] = 0
+    return (x_handled, )
+
+
+@contextmanager
 def make_pruning_effective(model):
     """
     Make the 'prune_channel_mask' and 'prune_weight_mask'
-    effective by assigning 0 to specific parameters.
+    effective by setting module input to zero accordingly
+    inside the context.
 
+    It is assumed that the channel/weight masks are all
+    inferred, so there's no need to mask weights or outputs.
     """
-    with torch.no_grad():
-        for module in model.modules():
-            if hasattr(module, 'prune_weight_mask'):
-                assert isinstance(module, _allowed_prune_layers)
-                module.weight[module.prune_weight_mask, ] = 0
-                if hasattr(module, 'bias') and module.bias is not None:
-                    module.bias[module.prune_weight_mask, ] = 0
+    handles = []
+    for module in model.modules():
+        if hasattr(module, 'prune_channel_mask'):
+            h = module.register_forward_pre_hook(_hook_set_input_zero)
+            handles.append(h)
 
-            if hasattr(module, 'prune_channel_mask'):
-                module.weight[:, module.prune_channel_mask, ] = 0
+    try:
+        yield model
+    finally:
+        for h in handles:
+            h.remove()
