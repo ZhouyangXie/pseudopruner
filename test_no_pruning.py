@@ -2,10 +2,8 @@ import torch
 from torchvision.models import resnet18
 
 from pseudopruner.weight_pruner import NormPruner
-from pseudopruner.count_flops import count_flops
-from pseudopruner.infer_masks import infer_masks
-from pseudopruner.utils import \
-    get_ready_to_prune, mark_to_prune, make_pruning_effective
+from pseudopruner.utils import get_ready_to_prune, mark_to_prune, \
+    count_flops, infer_masks
 
 
 def test():
@@ -29,9 +27,6 @@ def test():
     pruner.compute_mask(model)
     # infer other masks
     infer_masks(model, dummy_input)
-
-    # make masked weights zero
-    # make_pruning_effective(model)
 
     flops_after = count_flops(model, dummy_input)
     with torch.no_grad():

@@ -1,7 +1,6 @@
 import torch
 
-from pseudopruner.utils import get_ready_to_prune
-from pseudopruner.infer_masks import infer_masks
+from pseudopruner.utils import get_ready_to_prune, infer_masks
 
 
 class SimpleNet(torch.nn.Module):

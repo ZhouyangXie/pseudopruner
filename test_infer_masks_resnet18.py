@@ -2,9 +2,8 @@ import torch
 from torchvision.models import resnet18
 
 from pseudopruner.channel_pruner import RandomChannelPruner
-from pseudopruner.infer_masks import infer_masks
 from pseudopruner.utils import \
-    get_ready_to_prune, mark_to_prune
+    get_ready_to_prune, mark_to_prune, infer_masks
 
 
 def zero_weight(model, mask_weight):

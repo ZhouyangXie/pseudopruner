@@ -1,5 +1,5 @@
 import torch
-from .utils import _allowed_prune_layers
+from .pruning_utils import _allowed_prune_layers
 
 
 def _hook_handle_nan_output(module, _, output):
