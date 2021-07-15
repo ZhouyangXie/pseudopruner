@@ -22,18 +22,23 @@ class CompensationAwarePruner(ChannelPruner):
             in_channels = module.in_channels
             dim = in_channels * kw * kh
             ranks = module.ranks
-            assert len(ranks) == dim
-
-            num_masked = int(dim * sparsity)
+            num_masked = int(len(ranks) * sparsity)
             if num_masked == 0:
                 continue
 
-            # choose the first a few channels with important input be preserved
-            to_keep = torch.zeros((in_channels, ), dtype=torch.bool)
-            num_kept = int(in_channels * (1 - sparsity))
-            for i in ranks:
-                to_keep[i//(kw*kh)] = True
-                if to_keep.sum() >= num_kept:
-                    break
-
-            module.prune_channel_mask[~to_keep, ] = True
+            if len(ranks) == dim:
+                raise DeprecationWarning(
+                    'no long recommend this type of ranking')
+                # choose the first a few channels
+                # with important input be preserved
+                to_keep = torch.zeros((in_channels, ), dtype=torch.bool)
+                num_kept = int(in_channels * (1 - sparsity))
+                for i in ranks:
+                    to_keep[i//(kw*kh)] = True
+                    if to_keep.sum() >= num_kept:
+                        break
+                module.prune_channel_mask[~to_keep, ] = True
+            elif len(ranks) == in_channels:
+                module.prune_channel_mask[ranks[-num_masked:]] = True
+            else:
+                raise RuntimeError
