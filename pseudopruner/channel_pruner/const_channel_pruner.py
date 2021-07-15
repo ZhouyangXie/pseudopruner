@@ -18,23 +18,19 @@ class ConstChannelPruner(ChannelPruner):
             assert hasattr(module, 'mu')
             assert hasattr(module, 'sigma')
 
+            sigma = module.sigma.detach().cpu().numpy()
+            mu = module.mu.detach().cpu().numpy()
+            cov = sigma - np.outer(mu, mu)
+            to_mask = np.diag(cov) == 0.0
+
             if isinstance(module, torch.nn.Conv2d):
+                # mask the channels where all inputs are constant
                 in_channels = module.in_channels
                 kw, kh = module.kernel_size
-                sigma = module.sigma.detach().cpu().numpy()
-                mu = module.mu.detach().cpu().numpy()
-                dim = in_channels * kw * kh
-                assert sigma.shape == (dim, dim)
-                assert mu.shape == (dim, )
-
-                cov = sigma - np.outer(mu, mu)
-                # mask the channels where all inputs are constant
-                to_mask = np.diag(cov) == 0.0
                 to_mask = to_mask.reshape((in_channels, kw, kh))
                 to_mask = to_mask.all(axis=(1, 2))
-
             elif isinstance(module, torch.nn.Linear):
-                raise NotImplementedError
+                pass
             else:
                 raise TypeError
 
