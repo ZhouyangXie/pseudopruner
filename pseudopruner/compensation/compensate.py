@@ -78,8 +78,8 @@ def compute_conv_rec_loss(module):
 
 def _update_linear_weight(module):
     assert isinstance(module, torch.nn.Linear)
-    in_features = module.in_channels
-    out_features = module.out_channels
+    in_features = module.in_features
+    out_features = module.out_features
 
     # obtain and check statistics and masks
     mu = module.mu.detach().cpu().numpy()
