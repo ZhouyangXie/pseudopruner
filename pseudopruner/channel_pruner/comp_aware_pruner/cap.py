@@ -26,7 +26,9 @@ class CompensationAwarePruner(ChannelPruner):
             if num_masked == 0:
                 continue
 
-            if len(ranks) == dim:
+            if len(ranks) == in_channels:
+                module.prune_channel_mask[ranks[-num_masked:]] = True
+            elif len(ranks) == dim:
                 raise DeprecationWarning(
                     'no long recommend this type of ranking')
                 # choose the first a few channels
@@ -38,7 +40,5 @@ class CompensationAwarePruner(ChannelPruner):
                     if to_keep.sum() >= num_kept:
                         break
                 module.prune_channel_mask[~to_keep, ] = True
-            elif len(ranks) == in_channels:
-                module.prune_channel_mask[ranks[-num_masked:]] = True
             else:
                 raise RuntimeError
