@@ -1,0 +1,3 @@
+A PyTorch based DCNN channel/filter pruning implementation with virtual pruning. The pruned weights/features are ineffective during training/inference, which mimic the influence of pruning on accuracy/loss. But no real inference speed-up is introduced.
+
+This repo is released for research publication. More improvement and readability are coming...
